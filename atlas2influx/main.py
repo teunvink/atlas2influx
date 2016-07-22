@@ -22,6 +22,18 @@
 import sys
 import argparse
 import yaml
+import threading
+
+
+def stream(ch, type, parameters):
+    """
+    Function which adds a new stream.
+    """
+    print('Channel={}; Type={}; Parameters={}'.format(
+        ch,
+        type,
+        parameters,
+    ))
 
 
 def main():
@@ -45,6 +57,33 @@ def main():
             argp.config
         ))
         sys.exit(1)
+
+    if 'measurements' not in config:
+        config['measurements'] = []
+
+    threads = []
+
+    # Create a thread per stream
+    for msm in config['measurements']:
+        t = threading.Thread(
+            target=stream,
+            args=(
+                'result',
+                'result',
+                {'msm': msm},
+            )
+        )
+        threads.append(t)
+
+    # Start all streams
+    for t in threads:
+        t.start()
+
+    # Stop all streams
+    for t in threads:
+        t.join()
+
+    sys.exit(0)
 
 
 if __name__ == '__main__':
