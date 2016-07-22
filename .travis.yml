@@ -1,0 +1,13 @@
+language: python
+sudo: false
+cache: pip
+python:
+  - "3.4"
+  - "3.5"
+  - "nightly"
+install:
+  - pip install .
+before_script:
+  - cp config.yml.template config.yml
+script:
+  - atlas2influx
