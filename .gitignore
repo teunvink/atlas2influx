@@ -1,0 +1,16 @@
+# .gitignore
+
+*.swp
+*.pyc
+*.egg-info/
+__pycache__/
+/.cache/
+/.coverage/
+/.deps/
+/.requirements.txt
+/.vagrant/
+/build/
+/doc/_build/
+
+/.venv/
+/config.yml
