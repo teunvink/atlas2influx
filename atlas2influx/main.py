@@ -23,17 +23,35 @@ import sys
 import argparse
 import yaml
 import threading
+from ripe.atlas.cousteau import AtlasStream
+
+
+def on_result_response(*args):
+    """
+    Function that will be called every time we receive a new result.
+    Args is a tuple, so you should use args[0] to access the real message.
+    """
+    print(args[0])
 
 
 def stream(ch, type, parameters):
     """
     Function which adds a new stream.
     """
-    print('Channel={}; Type={}; Parameters={}'.format(
+    atlas_stream = AtlasStream()
+    atlas_stream.connect()
+
+    atlas_stream.bind_channel(
         ch,
-        type,
-        parameters,
-    ))
+        on_result_response,
+    )
+    atlas_stream.start_stream(
+        stream_type=type,
+        **parameters
+    )
+
+    atlas_stream.timeout(seconds=2)
+    atlas_stream.disconnect()
 
 
 def main():
@@ -74,6 +92,16 @@ def main():
             )
         )
         threads.append(t)
+
+    t = threading.Thread(
+        target=stream,
+        args=(
+            'probe',
+            'probestatus',
+            {'enrichProbes': True},
+        )
+    )
+    threads.append(t)
 
     # Start all streams
     for t in threads:
