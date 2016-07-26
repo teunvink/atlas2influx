@@ -4,13 +4,13 @@ from setuptools import setup, find_packages
 
 # Get the long description from the relevant file
 with codecs_open('README.rst', encoding='utf-8') as f:
-    long_description = f.read()
+    LONG_DESCRIPTION = f.read()
 
 
 setup(name='atlas2influx',
       version='0.1',
       description='RIPE Atlas to InfluxDB',
-      long_description=long_description,
+      long_description=LONG_DESCRIPTION,
       classifiers=[
           'Development Status :: 2 - Pre-Alpha',
           'Intended Audience :: System Administrators',
@@ -37,4 +37,4 @@ setup(name='atlas2influx',
       [console_scripts]
       atlas2influx=atlas2influx.main:main
       """
-      )
+     )
