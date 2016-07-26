@@ -21,8 +21,8 @@
 
 import sys
 import argparse
-import yaml
 import threading
+import yaml
 from ripe.atlas.cousteau import AtlasStream
 
 
@@ -34,7 +34,7 @@ def on_result_response(*args):
     print(args[0])
 
 
-def stream(ch, type, parameters):
+def stream(channel, stream_type, parameters):
     """
     Function which adds a new stream.
     """
@@ -42,11 +42,11 @@ def stream(ch, type, parameters):
     atlas_stream.connect()
 
     atlas_stream.bind_channel(
-        ch,
+        channel,
         on_result_response,
     )
     atlas_stream.start_stream(
-        stream_type=type,
+        stream_type=stream_type,
         **parameters
     )
 
@@ -68,8 +68,8 @@ def main():
                         help="Configuration file")
     argp = parser.parse_args(sys.argv[1:])
     try:
-        with open(argp.config, 'r') as f:
-            config = yaml.safe_load(f)
+        with open(argp.config, 'r') as file:
+            config = yaml.safe_load(file)
     except:
         sys.stderr.write("Load configuration {} failed.\n".format(
             argp.config
@@ -83,7 +83,7 @@ def main():
 
     # Create a thread per stream
     for msm in config['measurements']:
-        t = threading.Thread(
+        thread = threading.Thread(
             target=stream,
             args=(
                 'result',
@@ -91,9 +91,9 @@ def main():
                 {'msm': msm},
             )
         )
-        threads.append(t)
+        threads.append(thread)
 
-    t = threading.Thread(
+    thread = threading.Thread(
         target=stream,
         args=(
             'probe',
@@ -101,15 +101,15 @@ def main():
             {'enrichProbes': True},
         )
     )
-    threads.append(t)
+    threads.append(thread)
 
     # Start all streams
-    for t in threads:
-        t.start()
+    for thread in threads:
+        thread.start()
 
     # Stop all streams
-    for t in threads:
-        t.join()
+    for thread in threads:
+        thread.join()
 
     sys.exit(0)
 
