@@ -26,12 +26,26 @@ import yaml
 from ripe.atlas.cousteau import AtlasStream
 
 
+def on_result_ping(ping):
+    print(ping)
+
+
 def on_result_response(*args):
     """
     Function that will be called every time we receive a new result.
     Args is a tuple, so you should use args[0] to access the real message.
     """
-    print(args[0])
+    if args[0]['type'] == 'ping':
+        on_result_ping(args[0])
+    else:
+        try:
+            sys.stderr.write(
+                'Measurement type {} not supported.\n'.format(
+                    args[0]['type']
+                )
+            )
+        except KeyError as e:
+            sys.stderr.write(str('Unexpected key {} in result.\n'.format(e)))
 
 
 def stream(channel, stream_type, parameters):
