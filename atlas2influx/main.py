@@ -119,6 +119,23 @@ def main():
     )
     THREADS.append(thread)
 
+    # Start InfluxDB client
+    try:
+        client = InfluxDBClient(
+            '{}'.format(config['db']['host']),
+            '{}'.format(config['db']['port']),
+            '{}'.format(config['db']['user']),
+            '{}'.format(config['db']['password']),
+            '{}'.format(config['db']['database']),
+        )
+    except KeyError as err:
+        sys.stderr.write(
+            'ERROR: config db missing key {}.\n'.format(
+                err,
+            )
+        )
+        sys.exit(1)
+
     # Start all streams
     for thread in THREADS:
         thread.start()
