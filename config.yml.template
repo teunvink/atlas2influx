@@ -1,4 +1,11 @@
 ---
 
+db:
+  host: 127.0.0.1
+  port: 8086
+  user: atlas
+  password: secure
+  database: atlas
+
 measurements:
   - 1001
