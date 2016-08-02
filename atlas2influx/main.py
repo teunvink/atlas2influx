@@ -24,6 +24,7 @@ import argparse
 import threading
 import yaml
 from ripe.atlas.cousteau import AtlasStream
+from influxdb import InfluxDBClient
 
 
 THREADS = []

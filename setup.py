@@ -29,6 +29,7 @@ setup(name='atlas2influx',
       install_requires=[
           'PyYAML',
           'ripe.atlas.cousteau',
+          'influxdb',
       ],
       extras_require={
           'test': ['pytest'],
