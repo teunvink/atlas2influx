@@ -26,6 +26,9 @@ import yaml
 from ripe.atlas.cousteau import AtlasStream
 
 
+THREADS = []
+
+
 def on_result_ping(ping):
     print(ping)
 
@@ -44,8 +47,8 @@ def on_result_response(*args):
                     args[0]['type']
                 )
             )
-        except KeyError as e:
-            sys.stderr.write(str('Unexpected key {} in result.\n'.format(e)))
+        except KeyError as err:
+            sys.stderr.write(str('Unexpected key {} in result.\n'.format(err)))
 
 
 def stream(channel, stream_type, parameters):
@@ -93,8 +96,6 @@ def main():
     if 'measurements' not in config:
         config['measurements'] = []
 
-    threads = []
-
     # Create a thread per stream
     for msm in config['measurements']:
         thread = threading.Thread(
@@ -105,7 +106,7 @@ def main():
                 {'msm': msm},
             )
         )
-        threads.append(thread)
+        THREADS.append(thread)
 
     thread = threading.Thread(
         target=stream,
@@ -115,14 +116,14 @@ def main():
             {'enrichProbes': True},
         )
     )
-    threads.append(thread)
+    THREADS.append(thread)
 
     # Start all streams
-    for thread in threads:
+    for thread in THREADS:
         thread.start()
 
     # Stop all streams
-    for thread in threads:
+    for thread in THREADS:
         thread.join()
 
     sys.exit(0)
