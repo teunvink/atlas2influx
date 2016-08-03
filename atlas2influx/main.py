@@ -150,11 +150,15 @@ def main():
 
     # Start all streams
     for thread in threads:
+        thread.daemon = True
         thread.start()
 
-    # Stop all streams
-    for thread in threads:
-        thread.join()
+    try:
+        # Stop all streams
+        for thread in threads:
+            thread.join()
+    except KeyboardInterrupt:
+        pass
 
     sys.exit(0)
 
