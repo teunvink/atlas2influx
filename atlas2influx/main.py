@@ -21,83 +21,81 @@
 
 import sys
 import argparse
-import threading
+from threading import Thread
 import yaml
 from ripe.atlas.cousteau import AtlasStream
 from influxdb import InfluxDBClient
 
 
-THREADS = []
-DB_CLIENT = None
+class Stream(Thread):
+    def __init__(self, db_client, channel, stream_type, parameters):
+        Thread.__init__(self)
+        self.db_client = db_client
+        self.channel = channel
+        self.stream_type = stream_type
+        self.parameters = parameters
 
+    def on_result_ping(self, ping):
+        if self.db_client:
+            try:
+                json_body = [{
+                    "measurement": "ping",
+                    "tags": {
+                        "prb_id": "{}".format(ping['prb_id']),
+                        "msm_id": "{}".format(ping['msm_id']),
+                        "src_addr": "{}".format(ping['src_addr']),
+                        "dst_addr": "{}".format(ping['dst_addr']),
+                    },
+                    # convert time into nanoseconds
+                    "time": int(ping['timestamp'])*(10**9),
+                    "fields": {
+                        "value": float(ping['avg'])
+                    }
+                }]
+                self.db_client.write_points(json_body)
+            except KeyError:
+                pass
 
-def on_result_ping(ping):
-    if not DB_CLIENT is None:
-        try:
-            json_body = [{
-                "measurement": "ping",
-                "tags": {
-                    "prb_id": "{}".format(ping['prb_id']),
-                    "msm_id": "{}".format(ping['msm_id']),
-                    "src_addr": "{}".format(ping['src_addr']),
-                    "dst_addr": "{}".format(ping['dst_addr']),
-                },
-                # convert time into nanoseconds
-                "time": int(ping['timestamp'])*(10**9),
-                "fields": {
-                    "value": float(ping['avg'])
-                }
-            }]
-            DB_CLIENT.write_points(json_body)
-        except KeyError:
-            pass
-
-
-def on_result_response(*args):
-    """
-    Function that will be called every time we receive a new result.
-    Args is a tuple, so you should use args[0] to access the real message.
-    """
-    if args[0]['type'] == 'ping':
-        on_result_ping(args[0])
-    else:
-        try:
-            sys.stderr.write(
-                'Measurement type {} not supported.\n'.format(
-                    args[0]['type']
+    def on_result_response(self, *args):
+        """
+        Function that will be called every time we receive a new result.
+        Args is a tuple, so you should use args[0] to access the real message.
+        """
+        if args[0]['type'] == 'ping':
+            self.on_result_ping(args[0])
+        else:
+            try:
+                sys.stderr.write(
+                    'Measurement type {} not supported.\n'.format(
+                        args[0]['type']
+                    )
                 )
-            )
-            sys.stderr.write('{}\n'.format(args[0]))
-        except KeyError as err:
-            sys.stderr.write(str('Unexpected key {} in result.\n'.format(err)))
+                sys.stderr.write('{}\n'.format(args[0]))
+            except KeyError as err:
+                sys.stderr.write(str('Unexpected key {} in result.\n'.format(err)))
 
+    def run(self):
+        """
+        Function which adds a new stream.
+        """
+        atlas_stream = AtlasStream()
+        atlas_stream.connect()
 
-def stream(channel, stream_type, parameters):
-    """
-    Function which adds a new stream.
-    """
-    atlas_stream = AtlasStream()
-    atlas_stream.connect()
+        atlas_stream.bind_channel(
+            self.channel,
+            self.on_result_response,
+        )
+        atlas_stream.start_stream(
+            stream_type=self.stream_type,
+            **self.parameters
+        )
 
-    atlas_stream.bind_channel(
-        channel,
-        on_result_response,
-    )
-    atlas_stream.start_stream(
-        stream_type=stream_type,
-        **parameters
-    )
-
-    atlas_stream.timeout()
-    atlas_stream.disconnect()
+        atlas_stream.timeout()
+        atlas_stream.disconnect()
 
 
 def main():
-    global DB_CLIENT
-    global THREADS
-
-    THREADS = []
-    DB_CLIENT = None
+    threads = []
 
     # Get the configuration
     parser = argparse.ArgumentParser(
@@ -123,21 +121,9 @@ def main():
     if 'measurements' not in config:
         config['measurements'] = []
 
-    # Create a thread per stream
-    for msm in config['measurements']:
-        thread = threading.Thread(
-            target=stream,
-            args=(
-                'result',
-                'result',
-                {'msm': msm},
-            )
-        )
-        THREADS.append(thread)
-
     # Start InfluxDB client
     try:
-        DB_CLIENT = InfluxDBClient(
+        db_client = InfluxDBClient(
             '{}'.format(config['db']['host']),
             '{}'.format(config['db']['port']),
             '{}'.format(config['db']['user']),
@@ -152,12 +138,22 @@ def main():
         )
         sys.exit(1)
 
+    # Create a thread per stream
+    for msm in config['measurements']:
+        thread = Stream(
+            db_client,
+            'result',
+            'result',
+            {'msm': msm},
+        )
+        threads.append(thread)
+
     # Start all streams
-    for thread in THREADS:
+    for thread in threads:
         thread.start()
 
     # Stop all streams
-    for thread in THREADS:
+    for thread in threads:
         thread.join()
 
     sys.exit(0)
