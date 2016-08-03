@@ -33,7 +33,6 @@ DB_CLIENT = None
 
 def on_result_ping(ping):
     if not DB_CLIENT is None:
-        print(ping['timestamp'])
         try:
             json_body = [{
                 "measurement": "ping",
@@ -43,6 +42,7 @@ def on_result_ping(ping):
                     "src_addr": "{}".format(ping['src_addr']),
                     "dst_addr": "{}".format(ping['dst_addr']),
                 },
+                # convert time into nanoseconds
                 "time": int(ping['timestamp'])*(10**9),
                 "fields": {
                     "value": float(ping['avg'])
@@ -134,16 +134,6 @@ def main():
             )
         )
         THREADS.append(thread)
-
-    thread = threading.Thread(
-        target=stream,
-        args=(
-            'probe',
-            'probestatus',
-            {'enrichProbes': True},
-        )
-    )
-    THREADS.append(thread)
 
     # Start InfluxDB client
     try:
