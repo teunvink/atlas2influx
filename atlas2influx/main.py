@@ -28,10 +28,29 @@ from influxdb import InfluxDBClient
 
 
 THREADS = []
+DB_CLIENT = None
 
 
 def on_result_ping(ping):
-    print(ping)
+    if not DB_CLIENT is None:
+        print(ping['timestamp'])
+        try:
+            json_body = [{
+                "measurement": "ping",
+                "tags": {
+                    "prb_id": "{}".format(ping['prb_id']),
+                    "msm_id": "{}".format(ping['msm_id']),
+                    "src_addr": "{}".format(ping['src_addr']),
+                    "dst_addr": "{}".format(ping['dst_addr']),
+                },
+                "time": int(ping['timestamp'])*(10**9),
+                "fields": {
+                    "value": float(ping['avg'])
+                }
+            }]
+            DB_CLIENT.write_points(json_body)
+        except KeyError:
+            pass
 
 
 def on_result_response(*args):
@@ -48,6 +67,7 @@ def on_result_response(*args):
                     args[0]['type']
                 )
             )
+            sys.stderr.write('{}\n'.format(args[0]))
         except KeyError as err:
             sys.stderr.write(str('Unexpected key {} in result.\n'.format(err)))
 
@@ -68,11 +88,17 @@ def stream(channel, stream_type, parameters):
         **parameters
     )
 
-    atlas_stream.timeout(seconds=2)
+    atlas_stream.timeout()
     atlas_stream.disconnect()
 
 
 def main():
+    global DB_CLIENT
+    global THREADS
+
+    THREADS = []
+    DB_CLIENT = None
+
     # Get the configuration
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -121,7 +147,7 @@ def main():
 
     # Start InfluxDB client
     try:
-        client = InfluxDBClient(
+        DB_CLIENT = InfluxDBClient(
             '{}'.format(config['db']['host']),
             '{}'.format(config['db']['port']),
             '{}'.format(config['db']['user']),
