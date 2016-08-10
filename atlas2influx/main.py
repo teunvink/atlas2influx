@@ -47,7 +47,7 @@ class Stream(Thread):
                         "dst_addr": "{}".format(ping['dst_addr']),
                     },
                     # convert time into nanoseconds
-                    "time": int(ping['timestamp'])*(10**9),
+                    "time": int(ping['timestamp']) * (10**9),
                     "fields": {
                         "value": float(ping['avg'])
                     }
@@ -72,7 +72,9 @@ class Stream(Thread):
                 )
                 sys.stderr.write('{}\n'.format(args[0]))
             except KeyError as err:
-                sys.stderr.write(str('Unexpected key {} in result.\n'.format(err)))
+                sys.stderr.write(
+                    str('Unexpected key {} in result.\n'.format(err))
+                )
 
     def run(self):
         """
