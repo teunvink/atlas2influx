@@ -12,5 +12,6 @@ __pycache__/
 /build/
 /doc/_build/
 
+/.python-version
 /.venv/
 /config.yml
