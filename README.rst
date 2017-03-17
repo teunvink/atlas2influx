@@ -7,8 +7,8 @@ RIPE Atlas to InfluxDB
 
 |travis|
 
-.. |travis|  image:: https://travis-ci.org/2-B/atlas2influx.svg?branch=master
-   :target: https://travis-ci.org/2-B/atlas2influx
+.. |travis|  image:: https://travis-ci.org/keachi/atlas2influx.svg?branch=master
+   :target: https://travis-ci.org/keachi/atlas2influx
 
 
 Introduction
