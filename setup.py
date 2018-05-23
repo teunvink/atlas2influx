@@ -30,6 +30,7 @@ setup(name='atlas2influx',
           'PyYAML',
           'ripe.atlas.cousteau',
           'influxdb',
+          'python-geohash'
       ],
       extras_require={
           'test': ['pytest'],
